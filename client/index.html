@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Тусгай чат</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .login-box {
+            background: #ffffff;
+            width: 100%;
+            max-width: 380px;
+            padding: 32px 28px;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .login-logo {
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 16px auto;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .login-quote {
+            font-size: 13px;
+            color: #4a4a4a;
+            line-height: 1.5;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding: 0 10px;
+        }
+
+        .login-subtext {
+            font-size: 13px;
+            color: #777777;
+            margin-bottom: 20px;
+        }
+
+        .role-select-bg {
+            background: #f0f2f5;
+            padding: 8px 16px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .role-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #000000;
+            cursor: pointer;
+        }
+
+        .role-label input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #0084ff;
+            cursor: pointer;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #e4e6eb;
+            border-radius: 14px;
+            font-size: 15px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+            outline: none;
+            color: #333;
+        }
+
+        .login-input::placeholder {
+            color: #8e8e93;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: #0084ff;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .login-btn:active {
+            background: #006bce;
+        }
+
+        .pwd-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .pwd-modal-box {
+            background: white;
+            padding: 24px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 320px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Нэвтрэх хэсэг -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-box">
+            <div class="login-logo">
+                <img src="logo.png" alt="Logo">
+            </div>
+
+            <div class="login-quote">
+                Гайхамшиг зөвхөн өөрт нь итгэдэг хүмүүстэй учирдаг Аз жаргал зөвхөн өөрийн хүлээж байгаа газар орддог
+            </div>
+            
+            <div class="login-subtext">
+                Та аль тал болохоо сонгоод нууц үгээ оруулна уу
+            </div>
+
+            <div class="role-select-bg">
+                <label class="role-label">
+                    <input type="radio" name="userRole" value="m"> М хэрэглэгч
+                </label>
+                <label class="role-label">
+                    <input type="radio" name="userRole" value="o" checked> О хэрэглэгч
+                </label>
+            </div>
+
+            <input type="password" id="passwordInput" class="login-input" placeholder="Нууц үг оруулах...">
+            <button id="loginBtn" class="login-btn" onclick="startChat()">Нэвтрэх</button>
+            <p id="errorMsg" style="color: #fa3e3e; margin: 12px 0 0 0; font-size: 14px; text-align: center; font-weight: 500;"></p>
+        </div>
+    </div>
+
+    <!-- Нууц үг солих модал цонх -->
+    <div id="pwdModal" class="pwd-modal-overlay">
+        <div class="pwd-modal-box">
+            <h3 style="margin: 0 0 16px 0; color: #1c1e21; font-size: 18px; text-align: center;">⚙️ Нууц үг солих</h3>
+            <input type="password" id="oldPwd" class="login-input" placeholder="Одоогийн нууц үг" style="margin-bottom: 10px;">
+            <input type="password" id="newPwd" class="login-input" placeholder="Шинэ нууц үг" style="margin-bottom: 16px;">
+            <div style="display: flex; gap: 10px;">
+                <button onclick="submitChangePassword()" class="login-btn" style="flex: 1; padding: 10px;">Хадгалах</button>
+                <button onclick="closePwdModal()" class="login-btn" style="flex: 1; padding: 10px; background: #e4e6eb; color: #4b4f56;">Болих</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Мессенжер Апп -->
+    <div class="app-container">
+        <header class="chat-header">
+            <div class="user-info">
+                <div id="partnerAvatar" class="avatar">?</div>
+                <div class="user-details">
+                    <h3 id="partnerName">Хүлээгдэж байна...</h3>
+                    <span id="statusText" class="status-text">Оффлайн</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button onclick="openPwdModal()" style="border: none; background: transparent; cursor: pointer; font-size: 18px;" title="Нууц үг солих">⚙️</button>
+                <span id="statusDot" class="status-dot offline"></span>
+            </div>
+        </header>
+
+        <main class="chat-body" id="chatBody">
+            <div class="system-notice">
+                <span id="greetingText">🔒 Энэ бол зөвхөн М болон О талын тусгай чат юм</span>
+            </div>
+        </main>
+
+        <div id="typingIndicator" style="display: none; padding: 4px 15px; font-size: 13px; color: #888; font-style: italic;">
+            ✍️ Нөгөө хүн чинь бичиж байна...
+        </div>
+
+        <footer class="chat-footer">
+            <div class="input-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                <label for="imageInput" style="cursor: pointer; font-size: 20px;">📷</label>
+                <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="sendImage(event)">
+
+                <input type="text" id="messageInput" placeholder="Мессеж бичих..." autocomplete="off">
+                <button id="sendBtn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
