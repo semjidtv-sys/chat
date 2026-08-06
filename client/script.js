@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io("https://chat-tkqr.onrender.com");
 
 let currentRole = null;
 let editingMessageId = null;
