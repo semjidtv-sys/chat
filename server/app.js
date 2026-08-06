@@ -18,7 +18,8 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/login.html"));
 });
 
-const MONGO_URI = "mongodb+srv://semjidtv_db_user:NunRxnC9GsoPAqs3@cluster0.wmnucyt.mongodut.net/?appName=Cluster0";
+// MongoDB холболтын хаяг (Зассан)
+const MONGO_URI = "mongodb+srv://semjidtv_db_user:NunRxnC9GsoPAqs3@cluster0.wmnucyt.mongodb.net/?appName=Cluster0";
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log("🍃 MongoDB-тэй амжилттай холбогдлоо!"))
