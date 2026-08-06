@@ -1,269 +1,215 @@
-:root {
-    --messenger-blue: #0084ff;
-    --messenger-bg: #ffffff;
-    --chat-bg: #f0f2f5;
-    --text-color: #050505;
-    --gray-text: #65676b;
+/* ==========================================
+   ЧАТНЫ МЕССЕЖ, ХӨӨСӨНЦӨР, РЕАКШН ДИЗАЙН
+   ========================================== */
+
+/* Эх баримт контейнер */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: #f4f6f8;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
-
-/* Үндсэн арын дэлгэц (PC дээр) */
-body {
-    background-color: #2f2f2f;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
-}
-
-/* PC / Компьютерийн харагдац */
-.app-container {
-    width: 100%;
-    max-width: 420px;
-    height: 90vh;
-    max-height: 750px;
-    background: var(--messenger-bg);
-    border-radius: 16px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-}
-
-/* Чатны толгой */
+/* Мэндчилгээний хэсэг */
 .chat-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    display: flex;
-    align-items: center;
-    background: #fff;
-    z-index: 10;
+  padding: 10px;
+  text-align: center;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e4e6eb;
 }
 
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+#chat-greeting {
+  display: inline-block;
+  background: #eef3f8;
+  color: #2d3748;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.avatar-wrapper {
-    position: relative;
+/* Мессежүүдийн жагсаалт агуулах хэсэг */
+.chat-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
 }
 
-.avatar-box {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: var(--messenger-blue);
-    color: white;
-    font-weight: bold;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* Нэг багц мессежийн элемент */
+.message-item {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
+  position: relative;
 }
 
-.status-dot {
-    width: 12px;
-    height: 12px;
-    border: 2px solid #fff;
-    border-radius: 50%;
-    position: absolute;
-    bottom: 2px;
-    right: 0;
+/* Илгээсэн мессеж (Баруун талд) */
+.message-item.sent {
+  align-self: flex-end;
+  align-items: flex-end;
 }
 
-.status-dot.online { background-color: #31a24c; }
-.status-dot.offline { background-color: #bdc3c7; }
-
-.user-details h3 {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-color);
+/* Хүлээн авсан мессеж (Зүүн талд) */
+.message-item.received {
+  align-self: flex-start;
+  align-items: flex-start;
 }
 
-.status-text {
-    font-size: 12px;
-    color: var(--gray-text);
+/* Илгээгчийн нэр */
+.message-sender {
+  font-size: 11px;
+  color: #718096;
+  margin-bottom: 3px;
+  margin-left: 6px;
+  font-weight: 500;
 }
 
-/* Чатны бие */
-.chat-body {
-    flex: 1;
-    background-color: var(--chat-bg);
-    padding: 16px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+/* Мессежний хөөсөнцөр (Bubble) */
+.message-bubble {
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.45;
+  word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  position: relative;
 }
 
-.system-notice {
-    text-align: center;
-    margin: 10px 0 20px 0;
+/* Илгээсэн мессежний өнгө (Цэнхэр) */
+.message-item.sent .message-bubble {
+  background-color: #0084ff;
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
 }
 
-.system-notice span {
-    background: rgba(0, 0, 0, 0.06);
-    padding: 6px 14px;
-    border-radius: 12px;
-    font-size: 12px;
-    color: var(--gray-text);
+/* Хүлээн авсан мессежний өнгө (Цагаан) */
+.message-item.received .message-bubble {
+  background-color: #ffffff;
+  color: #1c1e21;
+  border: 1px solid #e4e6eb;
+  border-bottom-left-radius: 4px;
 }
 
-/* Доод мессеж бичих хэсэг */
-.chat-footer {
-    padding: 12px 16px;
-    background: #fff;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
+/* Зураг харагдах байдал */
+.message-bubble img {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 12px;
+  margin-top: 6px;
+  display: block;
+  object-fit: cover;
 }
 
-.input-wrapper {
-    display: flex;
-    align-items: center;
-    background: var(--chat-bg);
-    border-radius: 20px;
-    padding: 4px 8px 4px 16px;
+/* Зассан тэмдэглэгээ */
+.edited-tag {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-left: 4px;
+  font-style: italic;
 }
 
-.input-wrapper input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    outline: none;
-    font-size: 16px;
-    padding: 8px 0;
+/* Цугларсан реакшн харуулах хэсэг */
+.reactions-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
 }
 
-.input-wrapper button {
-    background: none;
-    border: none;
-    color: var(--messenger-blue);
-    font-size: 20px;
-    cursor: pointer;
-    padding: 8px 12px;
+.reaction-tag {
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 11px;
 }
 
-/* Нэвтрэх модал цонх */
-.login-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(8px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-    padding: 16px;
+.message-item.sent .reaction-tag {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
 }
 
-.login-card {
-    background: #fff;
-    padding: 28px 20px;
-    border-radius: 24px;
-    text-align: center;
-    width: 100%;
-    max-width: 360px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+/* Реакшн, Засах, Устгах товчлуурууд */
+.message-actions {
+  display: flex;
+  gap: 2px;
+  margin-top: 4px;
+  opacity: 0.4;
+  transition: opacity 0.2s;
 }
 
-.custom-brand-logo {
-    width: 120px;
-    height: 120px;
-    object-fit: contain;
-    display: block;
-    margin: 0 auto 12px auto;
+.message-item:hover .message-actions {
+  opacity: 1;
 }
 
-.login-card h2 {
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.4;
-    color: #333;
-    margin-bottom: 8px;
+.message-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
-.login-card p {
-    font-size: 12px;
-    color: var(--gray-text);
-    margin-bottom: 16px;
+.message-actions button:hover {
+  background: rgba(0, 0, 0, 0.08);
 }
 
-.role-selector {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 15px;
-    background: #f0f2f5;
-    padding: 10px;
-    border-radius: 12px;
+.message-item.sent .message-actions button:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
-.role-selector label {
-    cursor: pointer;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+/* Мессеж бичих талбар */
+.chat-input-area {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  background-color: #ffffff;
+  border-top: 1px solid #e4e6eb;
+  gap: 8px;
 }
 
-.login-card input[type="password"] {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    outline: none;
-    font-size: 16px; /* Гар утас дээр дэлгэц томрохоос сэргийлнэ */
+.image-upload-btn {
+  font-size: 20px;
+  cursor: pointer;
+  user-select: none;
 }
 
-.login-card button {
-    width: 100%;
-    padding: 12px;
-    background: var(--messenger-blue);
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
+.chat-input-area input[type="text"] {
+  flex: 1;
+  border: 1px solid #e4e6eb;
+  border-radius: 20px;
+  padding: 8px 14px;
+  outline: none;
+  font-size: 14px;
+  background-color: #f4f6f8;
 }
 
-.error-msg {
-    color: #e74c3c;
-    font-size: 13px;
-    margin-top: 10px;
+.chat-input-area input[type="text"]:focus {
+  background-color: #ffffff;
+  border-color: #0084ff;
 }
 
-/* 📱 ГАР УТАСНЫ ТОХИРГОО (Smartphones) */
-@media (max-width: 600px) {
-    body {
-        background-color: #ffffff;
-    }
+.chat-input-area button#sendBtn {
+  background-color: #0084ff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-    .app-container {
-        width: 100vw;
-        height: 100dvh;
-        max-height: none;
-        border-radius: 0;
-        box-shadow: none;
-    }
-
-    .login-card {
-        padding: 24px 18px;
-        max-width: 92%;
-    }
-
-    .custom-brand-logo {
-        width: 100px;
-        height: 100px;
-    }
+.chat-input-area button#sendBtn:hover {
+  background-color: #0073e6;
 }

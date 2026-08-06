@@ -3,29 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Chat</title>
+    <title>PrivateChat</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="chat-box">
-        <div class="chat-header">
-            <h2>Private Chat</h2>
-            <p id="currentUserDisplay"></p>
-        </div>
+    <div class="chat-container">
         
-        <div class="user-select-group">
-            <label for="users">Чаталж буй хэрэглэгч:</label>
-            <select id="users"></select>
+        <!-- Цаг агаар / мэндчилгээ харуулах хэсэг -->
+        <div class="chat-header">
+            <div id="chat-greeting">☀️ Өдрийн мэнд!</div>
         </div>
 
-        <div id="messages"></div>
+        <!-- Мессежүүд гарах хэсэг -->
+        <div id="messages" class="chat-messages"></div>
 
-        <div class="input-group">
-            <input id="message" placeholder="Мессежээ бичнэ үү..." onkeypress="handleKeyPress(event)">
-            <button onclick="sendMessage()">Илгээх</button>
+        <!-- Мессеж бичих болон илгээх хэсэг -->
+        <div class="chat-input-area">
+            <label for="imageInput" class="image-upload-btn" title="Зураг илгээх">📷</label>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            
+            <input type="text" id="messageInput" placeholder="Мессеж бичих...">
+            <button id="sendBtn">➤</button>
         </div>
+
     </div>
 
+    <!-- Socket.IO болон Клиент скрипт холбох -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="chat.js"></script>
 </body>
