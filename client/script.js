@@ -8,7 +8,7 @@ const errorMsg = document.getElementById('errorMsg');
 const messageInput = document.getElementById('messageInput');
 const messagesContainer = document.getElementById('messages');
 
-// 3. Нэвтрэх функц (HTML дээрх onclick="startChat()" энэ функцийг дуудна)
+// 3. Нэвтрэх функц
 function startChat() {
     const password = passwordInput ? passwordInput.value.trim() : '';
 
@@ -26,6 +26,9 @@ function startChat() {
         }
     }
 }
+
+// HTML-ийн onclick="startChat()" дээр шууд дуудахад зориулж глобал болгоно
+window.startChat = startChat;
 
 // 4. Socket холболт амжилттай болсон үед
 socket.on('connect', () => {
