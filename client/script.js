@@ -1,67 +1,88 @@
-// 1. Socket.io холболт үүсгэх
-// Хаалтан дотор ямар ч хаяг бичихгүй хоосон орхиход Render дээрх домэйнийг автоматаар таньдаг
+// 1. Socket.io холболт үүсгэх (Render домэйнийг автоматаар танина)
 const socket = io();
 
-// DOM элементүүд авна (та өөрийн HTML дээрх ID-тай тохируулаарай)
+// 2. DOM Элементүүдийг авах
+const loginOverlay = document.getElementById('loginOverlay');
+const passwordInput = document.getElementById('passwordInput');
+const errorMsg = document.getElementById('errorMsg');
 const messageInput = document.getElementById('messageInput');
-const sendButton = document.getElementById('sendButton');
 const messagesContainer = document.getElementById('messages');
 
-// 2. Сервертэй холбогдсон эсэхийг шалгах
+// 3. Нэвтрэх функц (HTML дээрх onclick="startChat()" энэ функцийг дуудна)
+function startChat() {
+    const password = passwordInput ? passwordInput.value.trim() : '';
+
+    // Нууц үг оруулсан тохиолдолд нэвтрүүлнэ
+    if (password !== "") {
+        if (loginOverlay) {
+            loginOverlay.style.display = 'none'; // Нэвтрэх цонхыг нууна
+        }
+        if (errorMsg) {
+            errorMsg.textContent = '';
+        }
+    } else {
+        if (errorMsg) {
+            errorMsg.textContent = 'Нууц үгээ оруулна уу!';
+        }
+    }
+}
+
+// 4. Socket холболт амжилттай болсон үед
 socket.on('connect', () => {
     console.log('Сервертэй амжилттай холбогдлоо. Socket ID:', socket.id);
 });
 
-// 3. Серверээс ирж буй мессежийг хүлээн авах
+// 5. Серверээс ирж буй мессежийг хүлээн авах
 socket.on('chat message', (data) => {
     displayMessage(data);
 });
 
-// 4. Мессеж илгээх функц
+socket.on('message', (data) => {
+    displayMessage(data);
+});
+
+// 6. Мессеж илгээх функц
 function sendMessage() {
+    if (!messageInput) return;
+    
     const text = messageInput.value.trim();
     if (text !== '') {
-        // Сервер рүү мессеж "chat message" эвентээр илгээнэ
-        socket.emit('chat message', {
+        const messageData = {
             text: text,
             timestamp: new Date()
-        });
+        };
+        
+        // Сервер рүү мессеж илгээх
+        socket.emit('chat message', messageData);
+        
         messageInput.value = ''; // Input цэвэрлэх
     }
 }
 
-// 5. Мессежийг дэлгэц дээр харуулах функц
+// 7. Мессежийг дэлгэц дээр харуулах функц
 function displayMessage(data) {
+    if (!messagesContainer) return;
+
     const messageElement = document.createElement('div');
     messageElement.classList.add('message');
     
-    // Дата хэлбэрээс хамаарч текст харуулах
     if (typeof data === 'object') {
-        messageElement.textContent = data.text || data.message;
+        messageElement.textContent = data.text || data.message || JSON.stringify(data);
     } else {
         messageElement.textContent = data;
     }
 
     messagesContainer.appendChild(messageElement);
-    // Доошоо автоматаар скроллдох
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    messagesContainer.scrollTop = messagesContainer.scrollHeight; // Автомат скролл
 }
 
-// 6. Илгээх товчлуур дээр дарах үед
-if (sendButton) {
-    sendButton.addEventListener('click', sendMessage);
-}
-
-// 7. Enter товчлуур дарах үед илгээх
-if (messageInput) {
-    messageInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
+// 8. Enter товч дарахад нэвтрэх эсвэл мессеж илгээх
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        if (loginOverlay && loginOverlay.style.display !== 'none') {
+            startChat();
+        } else {
             sendMessage();
         }
-    });
-}
-
-// 8. Серверээс холболт тасрах үед
-socket.on('disconnect', () => {
-    console.log('Серверээс холболт тасарлаа.');
+    }
 });
