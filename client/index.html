@@ -2,237 +2,65 @@
 <html lang="mn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Тусгай чат</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тусгай Чат</title>
     <style>
-        .login-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(8px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        /* Нэвтрэх цонх */
+        .login-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        .login-box { background: #1e293b; padding: 30px; border-radius: 16px; width: 90%; max-width: 380px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #334155; }
+        .login-box h2 { margin-bottom: 8px; color: #38bdf8; font-size: 22px; }
+        .login-box p { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+        .login-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; margin-bottom: 12px; font-size: 15px; text-align: center; outline: none; }
+        .login-input:focus { border-color: #38bdf8; }
+        .login-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #0284c7; color: white; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 15px; }
+        .login-btn:hover { background: #0369a1; }
+        .error-msg { color: #f43f5e; font-size: 13px; margin-top: 10px; min-height: 18px; }
 
-        .login-box {
-            background: #ffffff;
-            width: 100%;
-            max-width: 380px;
-            padding: 32px 28px;
-            border-radius: 28px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            text-align: center;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+        /* Үндсэн Чатын UI */
+        .chat-app { width: 100%; max-width: 600px; height: 90vh; background: #1e293b; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #334155; }
+        .chat-header { padding: 16px; background: #0f172a; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .chat-header h3 { font-size: 16px; color: #f8fafc; }
+        .status-badge { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: #334155; color: #94a3b8; font-weight: 500; }
+        .status-badge.online { background: #065f46; color: #34d399; }
 
-        .login-logo {
-            width: 110px;
-            height: 110px;
-            margin: 0 auto 16px auto;
-            border-radius: 50%;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        .messages-container { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { background: #334155; color: #f8fafc; padding: 10px 14px; border-radius: 12px; max-width: 80%; width: fit-content; word-break: break-word; font-size: 14px; line-height: 1.4; }
 
-        .login-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .login-quote {
-            font-size: 13px;
-            color: #4a4a4a;
-            line-height: 1.5;
-            font-weight: 600;
-            margin-bottom: 12px;
-            padding: 0 10px;
-        }
-
-        .login-subtext {
-            font-size: 13px;
-            color: #777777;
-            margin-bottom: 20px;
-        }
-
-        .role-select-bg {
-            background: #f0f2f5;
-            padding: 8px 16px;
-            border-radius: 16px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .role-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 15px;
-            font-weight: 700;
-            color: #000000;
-            cursor: pointer;
-        }
-
-        .role-label input[type="radio"] {
-            width: 18px;
-            height: 18px;
-            accent-color: #0084ff;
-            cursor: pointer;
-        }
-
-        .login-input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1.5px solid #e4e6eb;
-            border-radius: 14px;
-            font-size: 15px;
-            box-sizing: border-box;
-            margin-bottom: 16px;
-            outline: none;
-            color: #333;
-        }
-
-        .login-input::placeholder {
-            color: #8e8e93;
-        }
-
-        .login-btn {
-            width: 100%;
-            padding: 14px;
-            background: #0084ff;
-            color: white;
-            border: none;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .login-btn:active {
-            background: #006bce;
-        }
-
-        .pwd-modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            z-index: 10001;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .pwd-modal-box {
-            background: white;
-            padding: 24px;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 320px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+        .input-container { padding: 14px; background: #0f172a; border-top: 1px solid #334155; display: flex; gap: 8px; }
+        .chat-input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; outline: none; font-size: 14px; }
+        .send-btn { padding: 12px 20px; border-radius: 8px; border: none; background: #0284c7; color: white; font-weight: 600; cursor: pointer; }
+        .send-btn:hover { background: #0369a1; }
     </style>
 </head>
 <body>
 
-    <!-- Нэвтрэх хэсэг -->
+    <!-- 1. Нэвтрэх цонх -->
     <div id="loginOverlay" class="login-overlay">
         <div class="login-box">
-            <div class="login-logo">
-                <img src="logo.png" alt="Logo">
-            </div>
-
-            <div class="login-quote">
-                Гайхамшиг зөвхөн өөрт нь итгэдэг хүмүүстэй учирдаг Аз жаргал зөвхөн өөрийн хүлээж байгаа газар орддог
-            </div>
-            
-            <div class="login-subtext">
-                Та аль тал болохоо сонгоод нууц үгээ оруулна уу
-            </div>
-
-            <div class="role-select-bg">
-                <label class="role-label">
-                    <input type="radio" name="userRole" value="m"> М хэрэглэгч
-                </label>
-                <label class="role-label">
-                    <input type="radio" name="userRole" value="o" checked> О хэрэглэгч
-                </label>
-            </div>
-
-            <input type="password" id="passwordInput" class="login-input" placeholder="Нууц үг оруулах...">
-            <button id="loginBtn" class="login-btn" onclick="startChat()">Нэвтрэх</button>
-            <p id="errorMsg" style="color: #fa3e3e; margin: 12px 0 0 0; font-size: 14px; text-align: center; font-weight: 500;"></p>
+            <h2>Тусгай Чат</h2>
+            <p>Нэвтрэхийн тулд нууц үгээ оруулна уу</p>
+            <input type="password" id="passwordInput" class="login-input" placeholder="Нууц үг...">
+            <button id="loginBtn" class="login-btn">Нэвтрэх</button>
+            <div id="errorMsg" class="error-msg"></div>
         </div>
     </div>
 
-    <!-- Нууц үг солих модал цонх -->
-    <div id="pwdModal" class="pwd-modal-overlay">
-        <div class="pwd-modal-box">
-            <h3 style="margin: 0 0 16px 0; color: #1c1e21; font-size: 18px; text-align: center;">⚙️ Нууц үг солих</h3>
-            <input type="password" id="oldPwd" class="login-input" placeholder="Одоогийн нууц үг" style="margin-bottom: 10px;">
-            <input type="password" id="newPwd" class="login-input" placeholder="Шинэ нууц үг" style="margin-bottom: 16px;">
-            <div style="display: flex; gap: 10px;">
-                <button onclick="submitChangePassword()" class="login-btn" style="flex: 1; padding: 10px;">Хадгалах</button>
-                <button onclick="closePwdModal()" class="login-btn" style="flex: 1; padding: 10px; background: #e4e6eb; color: #4b4f56;">Болих</button>
-            </div>
+    <!-- 2. Чатын Үндсэн Дэлгэц -->
+    <div class="chat-app">
+        <div class="chat-header">
+            <h3>М & О Талын Чат</h3>
+            <span id="statusBadge" class="status-badge">Холбогдож байна...</span>
         </div>
-    </div>
+        
+        <div id="messages" class="messages-container"></div>
 
-    <!-- Мессенжер Апп -->
-    <div class="app-container">
-        <header class="chat-header">
-            <div class="user-info">
-                <div id="partnerAvatar" class="avatar">?</div>
-                <div class="user-details">
-                    <h3 id="partnerName">Хүлээгдэж байна...</h3>
-                    <span id="statusText" class="status-text">Оффлайн</span>
-                </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <button onclick="openPwdModal()" style="border: none; background: transparent; cursor: pointer; font-size: 18px;" title="Нууц үг солих">⚙️</button>
-                <span id="statusDot" class="status-dot offline"></span>
-            </div>
-        </header>
-
-        <main class="chat-body" id="chatBody">
-            <div class="system-notice">
-                <span id="greetingText">🔒 Энэ бол зөвхөн М болон О талын тусгай чат юм</span>
-            </div>
-        </main>
-
-        <div id="typingIndicator" style="display: none; padding: 4px 15px; font-size: 13px; color: #888; font-style: italic;">
-            ✍️ Нөгөө хүн чинь бичиж байна...
+        <div class="input-container">
+            <input type="text" id="messageInput" class="chat-input" placeholder="Мессеж бичих..." autocomplete="off">
+            <button id="sendBtn" class="send-btn">Илгээх</button>
         </div>
-
-        <footer class="chat-footer">
-            <div class="input-wrapper" style="display: flex; align-items: center; gap: 8px;">
-                <label for="imageInput" style="cursor: pointer; font-size: 20px;">📷</label>
-                <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="sendImage(event)">
-
-                <input type="text" id="messageInput" placeholder="Мессеж бичих..." autocomplete="off">
-                <button id="sendBtn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
-            </div>
-        </footer>
     </div>
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>

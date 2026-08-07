@@ -1,29 +1,29 @@
-// 1. Socket.io холболт үүсгэх
 const socket = io();
 
-// Socket холболтын эвентүүд
+// 🔑 ТОХИРУУЛАХ НҮУЦ ҮГ
+const SECRET_PASSWORD = "1234"; 
+
+// Socket холболтын төлөв
 socket.on('connect', () => {
-    console.log('Сервертэй амжилттай холбогдлоо. Socket ID:', socket.id);
-    updateStatus(true);
+    const badge = document.getElementById('statusBadge');
+    if (badge) {
+        badge.textContent = 'Онлайн';
+        badge.classList.add('online');
+    }
 });
 
 socket.on('disconnect', () => {
-    console.log('Серверээс холболт саллаа.');
-    updateStatus(false);
+    const badge = document.getElementById('statusBadge');
+    if (badge) {
+        badge.textContent = 'Оффлайн';
+        badge.classList.remove('online');
+    }
 });
 
 socket.on('chat message', (data) => displayMessage(data));
 socket.on('message', (data) => displayMessage(data));
 
-// Төлвийг аюулгүй шинэчлэх (HTML бүтцийг эвдэхгүй)
-function updateStatus(isConnected) {
-    const statusElement = document.getElementById('statusText') || document.querySelector('.status');
-    if (statusElement) {
-        statusElement.textContent = isConnected ? 'Онлайн' : 'Оффлайн';
-    }
-}
-
-// 2. DOM уншигдаж дууссаны дараа
+// DOM уншигдсаны дараа
 document.addEventListener('DOMContentLoaded', () => {
     const loginOverlay = document.getElementById('loginOverlay');
     const passwordInput = document.getElementById('passwordInput');
@@ -34,17 +34,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Нэвтрэх функц
     function startChat() {
-        const password = passwordInput ? passwordInput.value.trim() : '';
-        if (password !== "") {
-            if (loginOverlay) loginOverlay.style.display = 'none';
-            if (errorMsg) errorMsg.textContent = '';
+        const inputVal = passwordInput ? passwordInput.value.trim() : '';
+
+        if (inputVal === SECRET_PASSWORD) {
+            loginOverlay.style.display = 'none';
+            errorMsg.textContent = '';
+        } else if (inputVal === "") {
+            errorMsg.textContent = 'Нууц үгээ оруулна уу!';
         } else {
-            if (errorMsg) errorMsg.textContent = 'Нууц үгээ оруулна уу!';
+            errorMsg.textContent = 'Нууц үг буруу байна!';
         }
     }
 
     if (loginBtn) loginBtn.addEventListener('click', startChat);
-    window.startChat = startChat;
 
     // Мессеж илгээх функц
     function sendMessage() {
@@ -58,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (sendBtn) sendBtn.addEventListener('click', sendMessage);
 
-    // Enter товч дарах үед
+    // Enter товч
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             if (loginOverlay && loginOverlay.style.display !== 'none') {
@@ -70,9 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Мессеж дэлгэц дээр харуулах
+// Мессеж дэлгэцэнд оруулах
 function displayMessage(data) {
-    const messagesContainer = document.getElementById('messages') || document.querySelector('.messages-container');
+    const messagesContainer = document.getElementById('messages');
     if (!messagesContainer) return;
 
     const messageElement = document.createElement('div');
