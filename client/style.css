@@ -1,4 +1,63 @@
 /* ==========================================
+   НЭВТРЭХ ХУУДАСНЫ ДИЗАЙН
+   ========================================== */
+
+body {
+  margin: 0;
+}
+
+.login-box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 340px;
+  margin: 100px auto 0 auto;
+  padding: 32px 28px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+.login-box h2 {
+  margin: 0 0 6px 0;
+  color: #1c1e21;
+}
+
+.login-box input {
+  padding: 12px 14px;
+  border: 1.5px solid #e4e6eb;
+  border-radius: 12px;
+  font-size: 15px;
+  outline: none;
+  box-sizing: border-box;
+  color: #333;
+}
+
+.login-box input:focus {
+  border-color: #0084ff;
+}
+
+.login-box button {
+  padding: 12px;
+  background: #0084ff;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.login-box button:hover {
+  background: #006bce;
+}
+
+/* ==========================================
    ЧАТНЫ МЕССЕЖ, ХӨӨСӨНЦӨР, РЕАКШН ДИЗАЙН
    ========================================== */
 

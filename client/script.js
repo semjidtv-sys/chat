@@ -99,4 +99,41 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // Дэлгэц дээрх товчлуурууд дуудаж болохоор глобал функц болгож зарлана
+    window.sendMessage = sendMessage;
+
+    // 8. Зураг илгээх (одоогийн сервер зургийг base64 хэлбэрээр хүлээж авдаг)
+    window.sendImage = function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            alert('Зөвхөн зураг файл сонгоно уу!');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            socket.emit('chat message', { image: reader.result, timestamp: new Date() });
+            event.target.value = '';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    // 9. Нууц үг солих модал цонх нээх/хаах
+    // Санамж: сервер талд хэрэглэгчийн нууц үг хадгалах/шалгах логик хараахан
+    // хэрэгжээгүй тул энэ функц зөвхөн цонхыг нээж хаана, бодит нууц үг солихгүй.
+    window.openPwdModal = function () {
+        const modal = document.getElementById('pwdModal');
+        if (modal) modal.style.display = 'flex';
+    };
+
+    window.closePwdModal = function () {
+        const modal = document.getElementById('pwdModal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.submitChangePassword = function () {
+        alert('Нууц үг солих боломж серверт хараахан хэрэгжээгүй байна.');
+        window.closePwdModal();
+    };
 });

@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -18,8 +20,12 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/login.html"));
 });
 
-// Зассан MongoDB URL
 const MONGO_URI = "mongodb+srv://semjidtv_db_user:NunRxnC9GsoPAqs3@cluster0.wmnucyt.mongodb.net/?appName=Cluster0";
+
+if (!MONGO_URI) {
+  console.error("❌ MONGO_URI тохируулагдаагүй байна! server/.env файл үүсгэж MONGO_URI-г тодорхойлно уу (жишээг server/.env.example-с харна уу).");
+  process.exit(1);
+}
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log("🍃 MongoDB-тэй амжилттай холбогдлоо!"))
