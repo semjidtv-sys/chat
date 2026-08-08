@@ -3,20 +3,19 @@ const http = require("http");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const path = require("path");
-const fs = require("fs");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// MongoDB холболт
+// 1. MongoDB холболт
 const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://admin:admin123@cluster0.example.mongodb.net/private_chat?retryWrites=true&w=majority";
 
 mongoose.connect(MONGO_URI)
     .then(() => console.log("MongoDB амжилттай холбогдлоо."))
     .catch((err) => console.error("MongoDB холболтын алдаа:", err));
 
-// Мессежийн Schema
+// 2. Мессежийн Загвар (Schema)
 const messageSchema = new mongoose.Schema({
     sender: { type: String, required: true },
     message: { type: String, default: "" },
@@ -32,32 +31,14 @@ const messageSchema = new mongoose.Schema({
 
 const Message = mongoose.model("Message", messageSchema);
 
-// --- СТА́ТИК ФАЙЛУУДЫГ ШАЛГАЖ ДУУДАХ (Cannot GET / засах) ---
-const clientPath = path.join(__dirname, "client");
-const publicPath = path.join(__dirname, "public");
+// 3. Статик файлуудын замыг засах (client хавтас гадна талд байгаа тул "../client" гэж дуудна)
+app.use(express.static(path.join(__dirname, "../client")));
 
-if (fs.existsSync(clientPath)) {
-    app.use(express.static(clientPath));
-} else if (fs.existsSync(publicPath)) {
-    app.use(express.static(publicPath));
-}
-app.use(express.static(__dirname));
-
-// Үндсэн веб хуудсыг олох ба илгээх
 app.get("*", (req, res) => {
-    const indexPathClient = path.join(__dirname, "client", "index.html");
-    const indexPathRoot = path.join(__dirname, "index.html");
-
-    if (fs.existsSync(indexPathClient)) {
-        res.sendFile(indexPathClient);
-    } else if (fs.existsSync(indexPathRoot)) {
-        res.sendFile(indexPathRoot);
-    } else {
-        res.status(404).send("index.html файл олдсонгүй! Файлын бүтцээ шалгална уу.");
-    }
+    res.sendFile(path.join(__dirname, "../client", "index.html"));
 });
 
-// Нууц үгийн тохиргоо
+// 4. Нууц үг ба хэрэглэгчийн тохиргоо
 const PASSWORDS = {
     m: process.env.PASSWORD_M || "1234",
     o: process.env.PASSWORD_O || "1234"
@@ -65,8 +46,9 @@ const PASSWORDS = {
 
 const activeUsers = {};
 
-// Socket.IO
+// 5. Socket.IO Холболт
 io.on("connection", (socket) => {
+    // Нууц үг шалгах
     socket.on("verify_password", ({ role, password }) => {
         if (PASSWORDS[role] && PASSWORDS[role] === password) {
             socket.emit("login_result", { success: true, role: role });
@@ -75,6 +57,7 @@ io.on("connection", (socket) => {
         }
     });
 
+    // Хэрэглэгч холбогдох
     socket.on("user_connected", async (role) => {
         activeUsers[socket.id] = role;
         io.emit("user_list", Object.values(activeUsers));
@@ -83,14 +66,16 @@ io.on("connection", (socket) => {
             const previousMessages = await Message.find().sort({ createdAt: 1 }).limit(100);
             socket.emit("previous_messages", previousMessages);
         } catch (err) {
-            console.error(err);
+            console.error("Түүх татахад алдаа гарлаа:", err);
         }
     });
 
+    // Бичиж байна (Typing) статус
     socket.on("typing", (data) => {
         socket.broadcast.emit("display_typing", data);
     });
 
+    // Мессеж хүлээн авах ба илгээх
     socket.on("send_message", async (data) => {
         try {
             const newMsg = new Message({
@@ -103,10 +88,11 @@ io.on("connection", (socket) => {
             await newMsg.save();
             io.emit("receive_message", newMsg);
         } catch (err) {
-            console.error(err);
+            console.error("Мессеж хадгалахад алдаа гарлаа:", err);
         }
     });
 
+    // Эможи Reaction нэмэх
     socket.on("add_reaction", async ({ messageId, reaction, username }) => {
         try {
             const msg = await Message.findById(messageId);
@@ -121,25 +107,28 @@ io.on("connection", (socket) => {
                 });
             }
         } catch (err) {
-            console.error(err);
+            console.error("Рекшн хадгалахад алдаа гарлаа:", err);
         }
     });
 
+    // Мессеж устгах
     socket.on("delete_message", async (messageId) => {
         try {
             await Message.findByIdAndDelete(messageId);
             io.emit("message_deleted", messageId);
         } catch (err) {
-            console.error(err);
+            console.error("Мессеж устгахад алдаа гарлаа:", err);
         }
     });
 
+    // Холболт салсан үед
     socket.on("disconnect", () => {
         delete activeUsers[socket.id];
         io.emit("user_list", Object.values(activeUsers));
     });
 });
 
+// 6. Сервер асаах
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Сервер ${PORT} порт дээр ажиллаж байна.`);
