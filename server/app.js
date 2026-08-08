@@ -9,7 +9,7 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  maxHttpBufferSize: 1e7 // 10MB зураг илгээх боломжтой
+  maxHttpBufferSize: 1e7
 });
 
 app.use(express.json());
@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 const clientPath = path.join(__dirname, '../client');
 app.use(express.static(clientPath));
 
-// Schema & Model
+// MongoDB Schemas
 const messageSchema = new mongoose.Schema({
   sender: String,
   message: String,
@@ -28,34 +28,71 @@ const messageSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-const Message = mongoose.model('Message', messageSchema);
+const userSchema = new mongoose.Schema({
+  role: { type: String, unique: true },
+  password: String
+});
 
-// MongoDB Холболт
+const Message = mongoose.model('Message', messageSchema);
+const User = mongoose.model('User', userSchema);
+
+// MongoDB Холболт & Анхны хэрэглэгчдийг үүсгэх
 const MONGODB_URI = process.env.MONGODB_URI;
 if (MONGODB_URI) {
   mongoose.connect(MONGODB_URI)
-    .then(() => console.log('MongoDB амжилттай холбогдлоо'))
+    .then(async () => {
+      console.log('MongoDB амжилттай холбогдлоо');
+      // Анхны нууц үг үүсгэх
+      const mUser = await User.findOne({ role: 'm' });
+      if (!mUser) await new User({ role: 'm', password: process.env.PASS_M || '1234' }).save();
+      const oUser = await User.findOne({ role: 'o' });
+      if (!oUser) await new User({ role: 'o', password: process.env.PASS_O || '5678' }).save();
+    })
     .catch(err => console.error('MongoDB холболтын алдаа:', err));
 }
 
 const activeUsers = new Map();
 
 io.on('connection', (socket) => {
-  console.log('Шинэ хэрэглэгч холбогдлоо:', socket.id);
-
   // 1. Нууц үг шалгах
-  socket.on('verify_password', ({ role, password }) => {
-    const envPass = role === 'm' ? process.env.PASS_M : process.env.PASS_O;
-    const validPassword = envPass || (role === 'm' ? '1234' : '5678'); 
+  socket.on('verify_password', async ({ role, password }) => {
+    try {
+      let user = null;
+      if (mongoose.connection.readyState === 1) {
+        user = await User.findOne({ role });
+      }
+      const validPassword = user ? user.password : (role === 'm' ? '1234' : '5678');
 
-    if (password === validPassword) {
-      socket.emit('login_result', { success: true, role });
-    } else {
-      socket.emit('login_result', { success: false, message: 'Нууц үг буруу байна!' });
+      if (password === validPassword) {
+        socket.emit('login_result', { success: true, role });
+      } else {
+        socket.emit('login_result', { success: false, message: 'Нууц үг буруу байна!' });
+      }
+    } catch (e) {
+      socket.emit('login_result', { success: false, message: 'Серверийн алдаа!' });
     }
   });
 
-  // 2. Хэрэглэгч холбогдох
+  // 2. Нууц үг өөрчлөх
+  socket.on('change_password', async ({ role, oldPassword, newPassword }) => {
+    try {
+      if (mongoose.connection.readyState === 1) {
+        const user = await User.findOne({ role });
+        if (user && user.password === oldPassword) {
+          user.password = newPassword;
+          await user.save();
+          socket.emit('change_password_result', { success: true, message: 'Нууц үг амжилттай солигдлоо!' });
+        } else {
+          socket.emit('change_password_result', { success: false, message: 'Хуучин нууц үг буруу байна!' });
+        }
+      } else {
+        socket.emit('change_password_result', { success: false, message: 'Баазтай холбогдоогүй байна!' });
+      }
+    } catch (err) {
+      socket.emit('change_password_result', { success: false, message: 'Алдаа гарлаа!' });
+    }
+  });
+
   socket.on('user_connected', async (role) => {
     activeUsers.set(socket.id, role);
     io.emit('user_list', Array.from(activeUsers.values()));
@@ -70,12 +107,10 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 3. Бичиж байна...
   socket.on('typing', (data) => {
     socket.broadcast.emit('display_typing', data);
   });
 
-  // 4. Мессеж эсвэл зураг илгээх
   socket.on('send_message', async (data) => {
     const msgData = {
       _id: new mongoose.Types.ObjectId().toString(),
@@ -87,10 +122,8 @@ io.on('connection', (socket) => {
       createdAt: new Date()
     };
 
-    // Шууд бүх холбогдсон хэрэглэгчид илгээнэ
     io.emit('receive_message', msgData);
 
-    // Баазад хадгалах
     try {
       if (mongoose.connection.readyState === 1) {
         const newMsg = new Message({
@@ -108,10 +141,8 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 5. Эможи Реакшн нэмэх
   socket.on('add_reaction', async ({ messageId, reaction, username }) => {
     io.emit('update_message_reaction', { messageId, reaction, username });
-
     try {
       if (mongoose.connection.readyState === 1) {
         const msg = await Message.findById(messageId);
@@ -123,11 +154,10 @@ io.on('connection', (socket) => {
         }
       }
     } catch (err) {
-      console.error('Реакшн хадгалахад алдаа:', err);
+      console.error('Реакшн алдаа:', err);
     }
   });
 
-  // 6. Мессеж устгах
   socket.on('delete_message', async (messageId) => {
     io.emit('message_deleted', messageId);
     try {

@@ -35,21 +35,37 @@
         </div>
     </div>
 
-    <!-- 2. Чатын Үндсэн Дэлгэц -->
+    <!-- 2. Нууц үг солих модал -->
+    <div id="changePassModal" class="login-overlay" style="display: none; z-index: 2000;">
+        <div class="login-box">
+            <h3>Нууц үг өөрчлөх</h3>
+            <input type="password" id="oldPassInput" class="login-input" placeholder="Одоогийн нууц үг..." style="margin-bottom: 10px;">
+            <input type="password" id="newPassInput" class="login-input" placeholder="Шинэ нууц үг..." style="margin-bottom: 10px;">
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                <button id="savePassBtn" class="login-btn">Хадгалах</button>
+                <button id="closePassBtn" class="login-btn" style="background: #666;">Цуцлах</button>
+            </div>
+            <div id="passChangeMsg" class="error-msg" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- 3. Чатын Үндсэн Дэлгэц -->
     <div class="chat-app">
         <div class="chat-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px;">
             <div>
                 <h3 id="chatTitle" style="margin: 0;">М & О Талын Чат</h3>
                 <span id="statusBadge" class="status-badge">Холбогдож байна...</span>
             </div>
-            <button id="logoutBtn" style="background: #ff4d4d; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Гарах 🚪</button>
+            <div style="display: flex; gap: 8px;">
+                <button id="openChangePassBtn" style="background: #333; color: white; border: 1px solid #555; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔑 Нууц үг солих</button>
+                <button id="logoutBtn" style="background: #ff4d4d; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Гарах 🚪</button>
+            </div>
         </div>
         
         <div id="typingIndicator" class="typing-indicator" style="display: none; padding: 0 15px; font-size: 12px; opacity: 0.8;">Нөгөө тал бичиж байна...</div>
         
         <div id="messages" class="messages-container"></div>
 
-        <!-- Reply харагдах хэсэг -->
         <div id="replyPreview" class="reply-preview" style="display: none;">
             <div class="reply-content">
                 <span id="replyUser" class="reply-user"></span>

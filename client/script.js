@@ -1,4 +1,5 @@
 const socket = io();
+const notifAudio = new Audio("notification.mp3");
 
 document.addEventListener("DOMContentLoaded", () => {
     const loginOverlay = document.getElementById("loginOverlay");
@@ -13,6 +14,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const statusBadge = document.getElementById("statusBadge");
     const typingIndicator = document.getElementById("typingIndicator");
 
+    // Password change elements
+    const changePassModal = document.getElementById("changePassModal");
+    const openChangePassBtn = document.getElementById("openChangePassBtn");
+    const closePassBtn = document.getElementById("closePassBtn");
+    const savePassBtn = document.getElementById("savePassBtn");
+    const oldPassInput = document.getElementById("oldPassInput");
+    const newPassInput = document.getElementById("newPassInput");
+    const passChangeMsg = document.getElementById("passChangeMsg");
+
     const replyPreview = document.getElementById("replyPreview");
     const replyUser = document.getElementById("replyUser");
     const replyText = document.getElementById("replyText");
@@ -23,7 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let activeReply = null;
     let typingTimeout = null;
 
-    // Нэвтрэх цонхны логик
     if (isLoggedIn && myRole) {
         if (loginOverlay) loginOverlay.style.display = "none";
         socket.emit("user_connected", myRole);
@@ -52,6 +61,49 @@ document.addEventListener("DOMContentLoaded", () => {
             location.reload();
         });
     }
+
+    // Нууц үг өөрчлөх Модал нээх/хаах
+    if (openChangePassBtn) {
+        openChangePassBtn.addEventListener("click", () => {
+            if (changePassModal) changePassModal.style.display = "flex";
+        });
+    }
+    if (closePassBtn) {
+        closePassBtn.addEventListener("click", () => {
+            if (changePassModal) changePassModal.style.display = "none";
+            if (passChangeMsg) passChangeMsg.textContent = "";
+            oldPassInput.value = "";
+            newPassInput.value = "";
+        });
+    }
+    if (savePassBtn) {
+        savePassBtn.addEventListener("click", () => {
+            const oldP = oldPassInput.value.trim();
+            const newP = newPassInput.value.trim();
+
+            if (!oldP || !newP) {
+                passChangeMsg.textContent = "Мэдээллийг бүрэн бичнэ үү!";
+                return;
+            }
+
+            socket.emit("change_password", { role: myRole, oldPassword: oldP, newPassword: newP });
+        });
+    }
+
+    socket.on("change_password_result", (res) => {
+        if (passChangeMsg) {
+            passChangeMsg.style.color = res.success ? "#4caf50" : "#ff4d4d";
+            passChangeMsg.textContent = res.message;
+        }
+        if (res.success) {
+            setTimeout(() => {
+                if (changePassModal) changePassModal.style.display = "none";
+                oldPassInput.value = "";
+                newPassInput.value = "";
+                if (passChangeMsg) passChangeMsg.textContent = "";
+            }, 1500);
+        }
+    });
 
     socket.on("login_result", (result) => {
         if (result.success) {
@@ -240,6 +292,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     socket.on("receive_message", (msg) => {
         renderMessage(msg);
+        // Мессеж нөгөө талаас ирвэл дуу тоглоно
+        if (msg.sender !== myRole) {
+            notifAudio.play().catch(e => console.log("Дуу тоглуулах боломжгүй:", e));
+        }
     });
 
     socket.on("message_deleted", (id) => {
