@@ -3,6 +3,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const server = http.createServer(app);
@@ -31,11 +32,29 @@ const messageSchema = new mongoose.Schema({
 
 const Message = mongoose.model("Message", messageSchema);
 
-// --- СТА́ТИК ФАЙЛ БОЛОН ҮНДСЭН ЗАМ ( Cannot GET / алдааг засах хэсэг ) ---
-app.use(express.static(path.join(__dirname, "client")));
+// --- СТА́ТИК ФАЙЛУУДЫГ ШАЛГАЖ ДУУДАХ (Cannot GET / засах) ---
+const clientPath = path.join(__dirname, "client");
+const publicPath = path.join(__dirname, "public");
 
+if (fs.existsSync(clientPath)) {
+    app.use(express.static(clientPath));
+} else if (fs.existsSync(publicPath)) {
+    app.use(express.static(publicPath));
+}
+app.use(express.static(__dirname));
+
+// Үндсэн веб хуудсыг олох ба илгээх
 app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "client", "index.html"));
+    const indexPathClient = path.join(__dirname, "client", "index.html");
+    const indexPathRoot = path.join(__dirname, "index.html");
+
+    if (fs.existsSync(indexPathClient)) {
+        res.sendFile(indexPathClient);
+    } else if (fs.existsSync(indexPathRoot)) {
+        res.sendFile(indexPathRoot);
+    } else {
+        res.status(404).send("index.html файл олдсонгүй! Файлын бүтцээ шалгална уу.");
+    }
 });
 
 // Нууц үгийн тохиргоо
