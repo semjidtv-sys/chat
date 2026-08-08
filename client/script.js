@@ -10,17 +10,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const imageInput = document.getElementById("imageInput");
     const messagesContainer = document.getElementById("messages");
     const statusBadge = document.getElementById("statusBadge");
+    const typingIndicator = document.getElementById("typingIndicator");
+
+    const replyPreview = document.getElementById("replyPreview");
+    const replyUser = document.getElementById("replyUser");
+    const replyText = document.getElementById("replyText");
+    const cancelReplyBtn = document.getElementById("cancelReplyBtn");
 
     let myRole = localStorage.getItem("userRole") || "";
     let isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    let activeReply = null;
+    let typingTimeout = null;
 
-    // Эхлэхэд нэвтэрсэн эсэхийг шалгана
     if (isLoggedIn && myRole) {
         loginOverlay.style.display = "none";
         socket.emit("user_connected", myRole);
     }
 
-    // Нэвтрэх товч дарах
     loginBtn.addEventListener("click", () => {
         const password = passwordInput.value.trim();
         const selectedRoleEl = document.querySelector('input[name="userRole"]:checked');
@@ -34,7 +40,6 @@ document.addEventListener("DOMContentLoaded", () => {
         socket.emit("verify_password", { role: selectedRole, password: password });
     });
 
-    // Нууц үг шалгасан хариу
     socket.on("login_result", (result) => {
         if (result.success) {
             loginOverlay.style.display = "none";
@@ -48,7 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Онлайн хэрэглэгчдийг шинэчлэх
     socket.on("user_list", (users) => {
         const partnerRole = myRole === "m" ? "o" : "m";
         if (users.includes(partnerRole)) {
@@ -60,13 +64,53 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Мессеж илгээх
+    // --- Typing Status Logic ---
+    messageInput.addEventListener("input", () => {
+        socket.emit("typing", { sender: myRole, isTyping: true });
+
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            socket.emit("typing", { sender: myRole, isTyping: false });
+        }, 2000);
+    });
+
+    socket.on("display_typing", (data) => {
+        if (data.sender !== myRole) {
+            typingIndicator.style.display = data.isTyping ? "block" : "none";
+        }
+    });
+
+    // --- Reply Logic ---
+    window.setReply = (msgId, sender, text) => {
+        activeReply = { msgId, sender, text };
+        replyUser.textContent = `${sender.toUpperCase()} хэрэглэгчид хариулах:`;
+        replyText.textContent = text || "[Зураг]";
+        replyPreview.style.display = "flex";
+        messageInput.focus();
+    };
+
+    cancelReplyBtn.addEventListener("click", () => {
+        activeReply = null;
+        replyPreview.style.display = "none";
+    });
+
+    // --- Send Message ---
     function sendTextMessage() {
         const text = messageInput.value.trim();
         if (!text) return;
 
-        socket.emit("send_message", { sender: myRole, message: text });
+        const payload = {
+            sender: myRole,
+            message: text,
+            replyTo: activeReply
+        };
+
+        socket.emit("send_message", payload);
+        socket.emit("typing", { sender: myRole, isTyping: false });
+
         messageInput.value = "";
+        activeReply = null;
+        replyPreview.style.display = "none";
     }
 
     sendBtn.addEventListener("click", sendTextMessage);
@@ -77,28 +121,40 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Зураг илгээх
     imageInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = () => {
-            socket.emit("send_message", { sender: myRole, message: "", image: reader.result });
+            socket.emit("send_message", { sender: myRole, message: "", image: reader.result, replyTo: activeReply });
+            activeReply = null;
+            replyPreview.style.display = "none";
             imageInput.value = "";
         };
         reader.readAsDataURL(file);
     });
 
-    // Мессеж дэлгэцэнд зурах
     function renderMessage(msg) {
         const isSent = msg.sender === myRole;
         const msgDiv = document.createElement("div");
         msgDiv.className = `message-item ${isSent ? "sent" : "received"}`;
         msgDiv.id = `msg-${msg._id}`;
 
-        let html = `<span class="message-sender">${msg.sender.toUpperCase()} Тал</span>`;
+        let html = `<span class="message-sender">${msg.sender.toUpperCase()} хэрэглэгч</span>`;
+        
         html += `<div class="message-bubble">`;
+        
+        // Reply үзүүлэх хэсэг
+        if (msg.replyTo) {
+            html += `
+                <div class="quoted-message">
+                    <span class="quoted-user">${msg.replyTo.sender.toUpperCase()}</span>
+                    <span>${escapeHtml(msg.replyTo.text)}</span>
+                </div>
+            `;
+        }
+
         if (msg.message) html += `<div>${escapeHtml(msg.message)}</div>`;
         if (msg.image) html += `<img src="${msg.image}" alt="зураг" />`;
         html += `</div>`;
@@ -106,6 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
         html += `<div class="reactions-display" id="reactions-${msg._id}">${renderReactions(msg.reactions)}</div>`;
         html += `
             <div class="message-actions">
+                <button onclick="setReply('${msg._id}', '${msg.sender}', '${escapeHtml(msg.message || 'Зураг')}')">↩️ Хариулах</button>
                 <button onclick="sendReaction('${msg._id}', '❤️')">❤️</button>
                 <button onclick="sendReaction('${msg._id}', '👍')">👍</button>
                 ${isSent ? `<button onclick="deleteMsg('${msg._id}')">🗑️</button>` : ""}
@@ -125,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function escapeHtml(str) {
-        return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&#39;");
     }
 
     window.sendReaction = (messageId, reaction) => {
@@ -138,7 +195,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Socket ивэнтүүд
     socket.on("previous_messages", (messages) => {
         messagesContainer.innerHTML = "";
         messages.forEach(renderMessage);

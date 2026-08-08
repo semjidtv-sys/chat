@@ -1,138 +1,141 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
-const path = require("path");
 const mongoose = require("mongoose");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
+const io = new Server(server);
 
-const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST"] },
-  maxHttpBufferSize: 1e7
-});
-
-app.use(express.static(path.join(__dirname, "../client")));
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/index.html"));
-});
-
-const MONGO_URI = "mongodb+srv://semjidtv_db_user:NunRxnC9GsoPAqs3@cluster0.wmnucyt.mongodb.net/?appName=Cluster0";
+// --- 1. MongoDB холболт ба Schema ---
+// Хэрэв орчны хувьсагчид MONGODB_URI байхгүй бол дотоод эсвэл бэлэн URL ашиглана
+const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://admin:admin123@cluster0.example.mongodb.net/private_chat?retryWrites=true&w=majority";
 
 mongoose.connect(MONGO_URI)
-  .then(() => console.log("🍃 MongoDB-тэй амжилттай холбогдлоо!"))
-  .catch((err) => console.error("MongoDB холболтын алдаа:", err));
+    .then(() => console.log("MongoDB амжилттай холбогдлоо."))
+    .catch((err) => console.error("MongoDB холболтын алдаа:", err));
 
-// 1. Мессежийн модел (limit-гүй, replyTo нэмэгдсэн)
+// Мессежийн Загвар (Schema)
 const messageSchema = new mongoose.Schema({
-  sender: String,
-  message: String,
-  image: String,
-  replyTo: { type: Object, default: null },
-  reactions: { type: Object, default: {} },
-  isEdited: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now }
+    sender: { type: String, required: true }, // 'm' эсвэл 'o'
+    message: { type: String, default: "" },
+    image: { type: String, default: null },
+    reactions: { type: Map, of: String, default: {} }, // { "m": "❤️", "o": "👍" }
+    replyTo: {
+        msgId: String,
+        sender: String,
+        text: String
+    },
+    createdAt: { type: Date, default: Date.now }
 });
+
 const Message = mongoose.model("Message", messageSchema);
 
-// 2. Хэрэглэгчийн модел
-const userSchema = new mongoose.Schema({
-  role: String,
-  password: String
-});
-const User = mongoose.model("User", userSchema, "users");
+// --- 2. Статик файлуудыг сервинг хийх ---
+app.use(express.static(path.join(__dirname, "client")));
 
-const connectedUsers = {};
+// --- 3. Нууц үгийн тохиргоо (Орчны хувьсагчаас авах эсвэл дефолт утга) ---
+const PASSWORDS = {
+    m: process.env.PASSWORD_M || "1234",
+    o: process.env.PASSWORD_O || "1234"
+};
 
+// Онлайн байгаа хэрэглэгчдийг хадгалах объект { socketId: role }
+const activeUsers = {};
+
+// --- 4. Socket.IO Реалайм холболтууд ---
 io.on("connection", (socket) => {
-  // Бүх мессежийг лимитгүйгээр цувраагаар татна
-  Message.find().sort({ createdAt: 1 })
-    .then((messages) => socket.emit("previous_messages", messages))
-    .catch((err) => console.error(err));
+    console.log("Шинэ төхөөрөмж холбогдлоо:", socket.id);
 
-  // Нууц үг шалгах
-  socket.on("verify_password", async ({ role, password }) => {
-    try {
-      const user = await User.findOne({ role: role, password: password });
-      if (user) {
-        socket.emit("login_result", { success: true, role: role });
-      } else {
-        socket.emit("login_result", { success: false, message: "Нууц үг буруу байна!" });
-      }
-    } catch (err) {
-      console.error(err);
-      socket.emit("login_result", { success: false, message: "Серверийн алдаа гарлаа!" });
-    }
-  });
-
-  // Нууц үг солих эвент
-  socket.on("change_password", async ({ role, oldPwd, newPwd }) => {
-    try {
-      const user = await User.findOne({ role: role, password: oldPwd });
-      if (user) {
-        user.password = newPwd;
-        await user.save();
-        socket.emit("change_password_result", { success: true, message: "Нууц үг амжилттай солигдлоо!" });
-      } else {
-        socket.emit("change_password_result", { success: false, message: "Хуучин нууц үг буруу байна!" });
-      }
-    } catch (err) {
-      console.error(err);
-      socket.emit("change_password_result", { success: false, message: "Алдаа гарлаа!" });
-    }
-  });
-
-  socket.on("user_connected", (username) => {
-    connectedUsers[socket.id] = username;
-    io.emit("user_list", Object.values(connectedUsers));
-  });
-
-  socket.on("send_message", async (data) => {
-    try {
-      const newMessage = new Message({
-        sender: data.sender,
-        message: data.message,
-        image: data.image || null,
-        replyTo: data.replyTo || null,
-        reactions: {}
-      });
-      await newMessage.save();
-      io.emit("receive_message", newMessage);
-    } catch (err) { console.error(err); }
-  });
-
-  socket.on("delete_message", async (messageId) => {
-    try {
-      await Message.findByIdAndDelete(messageId);
-      io.emit("message_deleted", messageId);
-    } catch (err) { console.error(err); }
-  });
-
-  socket.on("add_reaction", async ({ messageId, reaction, username }) => {
-    try {
-      const msg = await Message.findById(messageId);
-      if (msg) {
-        msg.reactions = msg.reactions || {};
-        if (msg.reactions[username] === reaction) {
-          delete msg.reactions[username];
+    // Нууц үг шалгах
+    socket.on("verify_password", ({ role, password }) => {
+        if (PASSWORDS[role] && PASSWORDS[role] === password) {
+            socket.emit("login_result", { success: true, role: role });
         } else {
-          msg.reactions[username] = reaction;
+            socket.emit("login_result", { success: false, message: "Нууц үг буруу байна!" });
         }
-        msg.markModified("reactions");
-        await msg.save();
-        io.emit("update_message_reaction", { messageId, reactions: msg.reactions });
-      }
-    } catch (err) { console.error(err); }
-  });
+    });
 
-  socket.on("disconnect", () => {
-    delete connectedUsers[socket.id];
-    io.emit("user_list", Object.values(connectedUsers));
-  });
+    // Хэрэглэгч системд нэвтэрч амжилттай холбогдох үед
+    socket.on("user_connected", async (role) => {
+        activeUsers[socket.id] = role;
+
+        // Онлайн байгаа хэрэглэгчдийн жагсаалтыг бүх клиентед илгээх
+        io.emit("user_list", Object.values(activeUsers));
+
+        // Хуучин чатын түүхийг MongoDB-ээс татаж илгээх
+        try {
+            const previousMessages = await Message.find().sort({ createdAt: 1 }).limit(100);
+            socket.emit("previous_messages", previousMessages);
+        } catch (err) {
+            console.error("Түүх татахад алдаа гарлаа:", err);
+        }
+    });
+
+    // Typing (Бичиж байна...) статус дамжуулах
+    socket.on("typing", (data) => {
+        socket.broadcast.emit("display_typing", data);
+    });
+
+    // Мессеж хүлээн авах ба бусад хэрэглэгчид илгээх
+    socket.on("send_message", async (data) => {
+        try {
+            const newMsg = new Message({
+                sender: data.sender,
+                message: data.message || "",
+                image: data.image || null,
+                replyTo: data.replyTo || null
+            });
+
+            await newMsg.save();
+            io.emit("receive_message", newMsg);
+        } catch (err) {
+            console.error("Мессеж хадгалахад алдаа гарлаа:", err);
+        }
+    });
+
+    // Рекшн (Emoji Reaction) нэмэх
+    socket.on("add_reaction", async ({ messageId, reaction, username }) => {
+        try {
+            const msg = await Message.findById(messageId);
+            if (msg) {
+                if (!msg.reactions) {
+                    msg.reactions = new Map();
+                }
+                msg.reactions.set(username, reaction);
+                await msg.save();
+
+                io.emit("update_message_reaction", {
+                    messageId: msg._id,
+                    reactions: Object.fromEntries(msg.reactions)
+                });
+            }
+        } catch (err) {
+            console.error("Рекшн хадгалахад алдаа гарлаа:", err);
+        }
+    });
+
+    // Мессеж устгах
+    socket.on("delete_message", async (messageId) => {
+        try {
+            await Message.findByIdAndDelete(messageId);
+            io.emit("message_deleted", messageId);
+        } catch (err) {
+            console.error("Мессеж устгахад алдаа гарлаа:", err);
+        }
+    });
+
+    // Холболт тасрах үед
+    socket.on("disconnect", () => {
+        delete activeUsers[socket.id];
+        io.emit("user_list", Object.values(activeUsers));
+        console.log("Холболт саллаа:", socket.id);
+    });
 });
 
+// --- 5. Сервер асаах ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 Сервер ажиллаж байна: http://localhost:${PORT}`);
+    console.log(`Сервер ${PORT} порт дээр амжилттай ажиллаж байна.`);
 });
