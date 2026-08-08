@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginOverlay = document.getElementById("loginOverlay");
     const passwordInput = document.getElementById("passwordInput");
     const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
     const errorMsg = document.getElementById("errorMsg");
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
@@ -17,14 +18,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const replyText = document.getElementById("replyText");
     const cancelReplyBtn = document.getElementById("cancelReplyBtn");
 
-    let myRole = localStorage.getItem("userRole") || "m";
+    let myRole = localStorage.getItem("userRole") || "";
     let isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     let activeReply = null;
     let typingTimeout = null;
 
+    // Нэвтрэх цонхны логик
     if (isLoggedIn && myRole) {
         if (loginOverlay) loginOverlay.style.display = "none";
         socket.emit("user_connected", myRole);
+    } else {
+        if (loginOverlay) loginOverlay.style.display = "flex";
     }
 
     if (loginBtn) {
@@ -34,11 +38,18 @@ document.addEventListener("DOMContentLoaded", () => {
             const selectedRole = selectedRoleEl ? selectedRoleEl.value : "m";
 
             if (!password) {
-                errorMsg.textContent = "Нууц үгээ оруулна уу!";
+                if (errorMsg) errorMsg.textContent = "Нууц үгээ оруулна уу!";
                 return;
             }
 
             socket.emit("verify_password", { role: selectedRole, password: password });
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+            localStorage.clear();
+            location.reload();
         });
     }
 
@@ -147,9 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderReactionsHtml(reactions) {
         if (!reactions) return "";
         let entries = [];
-        if (reactions instanceof Map) {
-            entries = Array.from(reactions.entries());
-        } else if (typeof reactions === "object") {
+        if (typeof reactions === "object") {
             entries = Object.entries(reactions);
         }
         if (entries.length === 0) return "";
@@ -160,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         return Object.entries(counts)
-            .map(([emoji, count]) => `<span class="reaction-tag" style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 10px; margin-right: 4px; font-size: 12px;">${emoji} ${count}</span>`)
+            .map(([emoji, count]) => `<span class="reaction-tag" style="background: rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 10px; margin-right: 4px; font-size: 12px;">${emoji} ${count}</span>`)
             .join(" ");
     }
 
@@ -174,26 +183,24 @@ document.addEventListener("DOMContentLoaded", () => {
         msgDiv.id = `msg-${msg._id}`;
 
         let html = `<span class="message-sender" style="font-size: 11px; opacity: 0.7; display: block; margin-bottom: 2px;">${senderName.toUpperCase()} хэрэглэгч</span>`;
-        html += `<div class="message-bubble">`;
+        html += `<div class="message-bubble" style="background: ${isSent ? '#0084ff' : '#333'}; color: white; padding: 8px 12px; border-radius: 12px; display: inline-block;">`;
 
         if (msg.replyTo) {
             const rSender = msg.replyTo.sender ? String(msg.replyTo.sender) : "";
             html += `
-                <div class="quoted-message" style="background: rgba(0,0,0,0.2); border-left: 3px solid #0084ff; padding: 4px 8px; margin-bottom: 5px; border-radius: 4px; font-size: 12px;">
-                    <span class="quoted-user" style="font-weight: bold; display: block;">${rSender.toUpperCase()}</span>
+                <div class="quoted-message" style="background: rgba(0,0,0,0.3); border-left: 3px solid #ffca28; padding: 4px 8px; margin-bottom: 5px; border-radius: 4px; font-size: 12px;">
+                    <span class="quoted-user" style="font-weight: bold; display: block; color: #ffca28;">${rSender.toUpperCase()}</span>
                     <span>${escapeHtml(msg.replyTo.text)}</span>
                 </div>
             `;
         }
 
         if (msg.message) html += `<div>${escapeHtml(msg.message)}</div>`;
-        if (msg.image) html += `<img src="${msg.image}" alt="зураг" style="max-width: 200px; border-radius: 8px; margin-top: 5px;" />`;
+        if (msg.image) html += `<img src="${msg.image}" alt="зураг" style="max-width: 200px; border-radius: 8px; margin-top: 5px; display: block;" />`;
         html += `</div>`;
 
-        // Реакшн харуулах хэсэг
         html += `<div class="reactions-display" id="reactions-${msg._id}" style="margin-top: 4px;">${renderReactionsHtml(msg.reactions)}</div>`;
 
-        // Үйлдэх товчлуурууд болон Эможи реакшнууд
         html += `
             <div class="message-actions" style="margin-top: 4px; display: flex; gap: 6px; font-size: 13px;">
                 <button onclick="setReply('${msg._id}', '${senderName}', '${escapeHtml(msg.message || 'Зураг')}')" style="background:none; border:none; cursor:pointer; color:#bbb;">↩️</button>
@@ -243,8 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
     socket.on("update_message_reaction", ({ messageId, reaction, username }) => {
         const el = document.getElementById(`reactions-${messageId}`);
         if (el) {
-            // Шууд дэлгэцэнд реакшн тэмдэгтийг нэмнэ
-            el.innerHTML = `<span class="reaction-tag" style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 10px; margin-right: 4px; font-size: 12px;">${reaction} 1</span>`;
+            el.innerHTML = `<span class="reaction-tag" style="background: rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 10px; margin-right: 4px; font-size: 12px;">${reaction} 1</span>`;
         }
     });
 });

@@ -37,13 +37,15 @@
 
     <!-- 2. Чатын Үндсэн Дэлгэц -->
     <div class="chat-app">
-        <div class="chat-header">
+        <div class="chat-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px;">
             <div>
-                <h3 id="chatTitle">М & О Талын Чат</h3>
+                <h3 id="chatTitle" style="margin: 0;">М & О Талын Чат</h3>
                 <span id="statusBadge" class="status-badge">Холбогдож байна...</span>
             </div>
-            <div id="typingIndicator" class="typing-indicator" style="display: none;">Нөгөө тал бичиж байна...</div>
+            <button id="logoutBtn" style="background: #ff4d4d; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Гарах 🚪</button>
         </div>
+        
+        <div id="typingIndicator" class="typing-indicator" style="display: none; padding: 0 15px; font-size: 12px; opacity: 0.8;">Нөгөө тал бичиж байна...</div>
         
         <div id="messages" class="messages-container"></div>
 
@@ -57,7 +59,7 @@
         </div>
 
         <div class="input-container">
-            <label for="imageInput" class="image-upload-btn" title="Зураг илгээх">📷</label>
+            <label for="imageInput" class="image-upload-btn" title="Зураг илгээх" style="cursor: pointer; font-size: 20px; margin-right: 10px;">📷</label>
             <input type="file" id="imageInput" accept="image/*" style="display: none;">
             
             <input type="text" id="messageInput" class="chat-input" placeholder="Мессеж бичих..." autocomplete="off">
