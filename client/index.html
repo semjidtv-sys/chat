@@ -4,36 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тусгай Чат</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: #0f172a; color: #f8fafc; height: 100vh; display: flex; justify-content: center; align-items: center; }
-        
-        /* Нэвтрэх цонх */
-        .login-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); display: flex; justify-content: center; align-items: center; z-index: 100; }
-        .login-box { background: #1e293b; padding: 30px; border-radius: 16px; width: 90%; max-width: 380px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #334155; }
-        .login-box h2 { margin-bottom: 8px; color: #38bdf8; font-size: 22px; }
-        .login-box p { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
-        .login-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; margin-bottom: 12px; font-size: 15px; text-align: center; outline: none; }
-        .login-input:focus { border-color: #38bdf8; }
-        .login-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #0284c7; color: white; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 15px; }
-        .login-btn:hover { background: #0369a1; }
-        .error-msg { color: #f43f5e; font-size: 13px; margin-top: 10px; min-height: 18px; }
-
-        /* Үндсэн Чатын UI */
-        .chat-app { width: 100%; max-width: 600px; height: 90vh; background: #1e293b; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #334155; }
-        .chat-header { padding: 16px; background: #0f172a; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
-        .chat-header h3 { font-size: 16px; color: #f8fafc; }
-        .status-badge { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: #334155; color: #94a3b8; font-weight: 500; }
-        .status-badge.online { background: #065f46; color: #34d399; }
-
-        .messages-container { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .message { background: #334155; color: #f8fafc; padding: 10px 14px; border-radius: 12px; max-width: 80%; width: fit-content; word-break: break-word; font-size: 14px; line-height: 1.4; }
-
-        .input-container { padding: 14px; background: #0f172a; border-top: 1px solid #334155; display: flex; gap: 8px; }
-        .chat-input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; outline: none; font-size: 14px; }
-        .send-btn { padding: 12px 20px; border-radius: 8px; border: none; background: #0284c7; color: white; font-weight: 600; cursor: pointer; }
-        .send-btn:hover { background: #0369a1; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -41,7 +12,17 @@
     <div id="loginOverlay" class="login-overlay">
         <div class="login-box">
             <h2>Тусгай Чат</h2>
-            <p>Нэвтрэхийн тулд нууц үгээ оруулна уу</p>
+            <p>Та хэрэглэгчийн тал болон нууц үгээ сонгоно уу</p>
+            
+            <div class="role-selector">
+                <label>
+                    <input type="radio" name="userRole" value="m" checked> М Тал
+                </label>
+                <label>
+                    <input type="radio" name="userRole" value="o"> О Тал
+                </label>
+            </div>
+
             <input type="password" id="passwordInput" class="login-input" placeholder="Нууц үг...">
             <button id="loginBtn" class="login-btn">Нэвтрэх</button>
             <div id="errorMsg" class="error-msg"></div>
@@ -51,19 +32,24 @@
     <!-- 2. Чатын Үндсэн Дэлгэц -->
     <div class="chat-app">
         <div class="chat-header">
-            <h3>М & О Талын Чат</h3>
-            <span id="statusBadge" class="status-badge">Холбогдож байна...</span>
+            <div>
+                <h3 id="chatTitle">М & О Талын Чат</h3>
+                <span id="statusBadge" class="status-badge">Холбогдож байна...</span>
+            </div>
         </div>
         
         <div id="messages" class="messages-container"></div>
 
         <div class="input-container">
+            <label for="imageInput" class="image-upload-btn" title="Зураг илгээх">📷</label>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            
             <input type="text" id="messageInput" class="chat-input" placeholder="Мессеж бичих..." autocomplete="off">
             <button id="sendBtn" class="send-btn">Илгээх</button>
         </div>
     </div>
 
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
